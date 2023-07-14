@@ -19,3 +19,5 @@ game2_oreb = game_rebs(game2, 'o')
 game2_dreb = game_rebs(game2, 'd')
 print(game2_oreb)
 print(game2_dreb)
+print(hi)
+
