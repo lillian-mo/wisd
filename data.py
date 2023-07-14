@@ -7,5 +7,4 @@ def load_game(data: str) -> DataFrame:
 
 game2 = load_game("0042100302_events.jsonl")
 game2 = game2.query("eventType == 'DRIBBLE'")
-game2 = game2.filter(items=['eventType', 'playerId'])
 print(game2)
