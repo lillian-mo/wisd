@@ -8,27 +8,23 @@ def load_game(game_id: str) -> DataFrame:
     return df_e.merge(df_t, how='inner', on=['gameClock', 'period']).filter\
                     (items=['eventType','shotClock_x','gameClock','period','ball'])
 
+def mult_games(games: list) -> DataFrame:
+    df = load_game(games[0])
+    for i in games[1:]:
+        df = pd.concat(objs=[df, load_game(i)], ignore_index=True)
 
-def game_evs(df: DataFrame, event_id: int, oord: str='none') -> DataFrame:
+    return df
+
+def game_evs(df: DataFrame, event: str, oord: str='none') -> DataFrame:
 
     if oord == 'o':
-        new_df = df.query(f"eventType == '{evs[event_id]}' and shotClock_x != 24.0")
+        new_df = df.query(f"eventType == '{event}' and shotClock_x != 24.0")
     elif oord == 'd':
-        new_df = df.query(f"eventType == '{evs[event_id]}' and shotClock_x == 24.0")
+        new_df = df.query(f"eventType == '{event}' and shotClock_x == 24.0")
     else:
-        new_df = df.query(f"eventType == '{evs[event_id]}'")
+        new_df = df.query(f"eventType == '{event}'")
     
     new_coords = pd.DataFrame(new_df.pop('ball').tolist(), index=new_df.index, columns = ['x','y','z'])
-    final_df = pd.concat([new_df, new_coords.reindex(game2.index)], axis=1).dropna()
+    final_df = pd.concat([new_df, new_coords.reindex(new_df.index)], axis=1).dropna()
 
     return final_df
-
-
-game2 = load_game("0042100302")
-print(game2)
-evs = game2.eventType.unique().tolist()
-#offensive rebounds testing
-game2_oreb = game_evs(game2, evs.index('REB'), 'o')
-game2_dreb = game_evs(game2, evs.index('REB'), 'd')
-print(game2_oreb)
-print(game2_dreb)
