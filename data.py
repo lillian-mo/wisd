@@ -1,12 +1,17 @@
 import pandas as pd
 from pandas import DataFrame
+import teams
 
 def load_game(game_id: str) -> DataFrame:
     df_e = pd.read_json(f"./games/{game_id}/{game_id}_events.jsonl", lines=True)
     df_t = pd.read_json(f"./games/{game_id}/{game_id}_tracking.jsonl", lines=True).drop_duplicates(subset=['gameClock','period'])
 
-    return df_e.merge(df_t, how='inner', on=['gameClock', 'period']).filter\
-                    (items=['eventType','shotClock_x','gameClock','period','ball'])
+    e_and_t = df_e.merge(df_t, how='inner', on=['gameClock', 'period']).filter\
+                    (items=['gameId', 'eventType','shotClock_x','gameClock','period','ball'])\
+    
+    return e_and_t
+    
+
 
 def mult_games(games: list) -> DataFrame:
     df = load_game(games[0])
