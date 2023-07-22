@@ -16,9 +16,11 @@ orebs_team1 = game2_oreb.query("((period == 1 | period == 2) and x < 0.00) | ((p
 court_x = 47
 court_y = 25
 
+
 ## get coords within bounds 
 def get_game_xy(game, axis):
     return game.query('x <= 47 and x >= -47').filter([axis])[axis].values.tolist() 
+
 
 ## calculate kernal density
 def game_kde(game_x, game_y):
@@ -27,6 +29,7 @@ def game_kde(game_x, game_y):
     y = np.array(game_y)
     xy = np.vstack([x, y]) # arrange arrays vertically to form a single array
     return gaussian_kde(xy)(xy) # return point density
+
 
 def plot_init(x, y):
     ## load court image as background
@@ -47,6 +50,7 @@ def plot_init(x, y):
     plt.scatter(x, y, c = c, cmap = 'hot_r', alpha = 0.75)
     cbar = plt.colorbar(orientation = 'vertical', shrink = 0.5)
     cbar.set_label(label = 'Density', size = 8)
+
 
 plot_init(get_game_xy(orebs_team1, 'x'), get_game_xy(orebs_team1, 'y')) # plot the points
 plt.show() # display the scatter plot
