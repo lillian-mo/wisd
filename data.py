@@ -30,6 +30,10 @@ def game_evs(df: DataFrame, event: str, oord: str='none') -> DataFrame:
         new_df = df.query(f"eventType == '{event}'")
     
     new_coords = pd.DataFrame(new_df.pop('ball').tolist(), index=new_df.index, columns = ['x','y','z'])
-    final_df = pd.concat([new_df, new_coords.reindex(new_df.index)], axis=1).dropna()
+    combined = pd.concat([new_df, new_coords.reindex(new_df.index)], axis=1).dropna()
+    
+    combined['gameId'] = combined['gameId'].astype(str)
+    teams.all_games['game'] = teams.all_games['game'].astype(str)
+    combined['gameId'] = combined['gameId'].map(teams.all_games.set_index('game')['homeTeam'])
 
-    return final_df
+    return combined

@@ -16,5 +16,5 @@ game_meta['nbaId'] = game_meta['nbaId'].astype(int)
 all_games = game_meta[(game_meta['nbaId'] >= 42100303) & (game_meta['nbaId'] <= 42100406)]
 all_games['homeTeamId'] = all_games['homeTeamId'].map(team_meta.set_index('id')['name'])
 all_games['awayTeamId'] = all_games['awayTeamId'].map(team_meta.set_index('id')['name'])
-all_games = all_games.filter(items=['id', 'homeTeamId', 'awayTeamId',])
-all_games = all_games.rename(columns={'id': 'gameId', 'homeTeamId': 'homeTeam', 'awayTeamId': 'awayTeam'})
+all_games = all_games.filter(items=['id', 'homeTeamId', 'awayTeamId', 'nbaId'])
+all_games = all_games.rename(columns={'id': 'game', 'homeTeamId': 'homeTeam', 'awayTeamId': 'awayTeam'})

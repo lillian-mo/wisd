@@ -10,9 +10,9 @@ evs = game2.eventType.unique().tolist()
 tos = data.game_evs(twoand3, 'TO')
 game2_oreb = data.game_evs(game2, 'REB', 'o')
 game2_dreb = data.game_evs(game2, 'REB', 'd')
-orebs_team1 = game2_oreb.query("((period == 1 | period == 2) and x < 0.00) | ((period == 3 | period == 4) and x > 0.0)")
+#orebs_team1 = game2_oreb.query("((period == 1 | period == 2) and x < 0.00) | ((period == 3 | period == 4) and x > 0.0)")
 
-print(orebs_team1)
+print(game2_oreb)
 
 ## bounds of the court
 court_x = 47
