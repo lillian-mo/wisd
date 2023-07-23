@@ -12,6 +12,9 @@ game2_oreb = data.game_evs(game2, 'REB', 'o')
 game2_dreb = data.game_evs(game2, 'REB', 'd')
 orebs_team1 = tos.query("((period == 1 | period == 2) and x < 0.00) | ((period == 3 | period == 4) and x > 0.0)")
 
+# print(orebs_team1)
+
+
 ## bounds of the court
 court_x = 47
 court_y = 25
@@ -33,7 +36,7 @@ def game_kde(game_x, game_y):
 
 def plot_init(x, y):
     ## load court image as background
-    img = plt.imread("court.jpg")
+    img = plt.imread("..\wisd\court.jpg")
     plt.imshow(img, extent=[-court_x, court_x, -court_y, court_y]) ## show image
 
     ## set axes scale
