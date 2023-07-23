@@ -7,12 +7,10 @@ game2 = data.load_game("0042100302")
 twoand3 = data.mult_games(['0042100302', '0042100303'])
 
 evs = game2.eventType.unique().tolist()
-tos = data.game_evs(twoand3, 'TO')
+tos = data.game_evs(twoand3, 'REB', 'o')
 game2_oreb = data.game_evs(game2, 'REB', 'o')
 game2_dreb = data.game_evs(game2, 'REB', 'd')
-#orebs_team1 = game2_oreb.query("((period == 1 | period == 2) and x < 0.00) | ((period == 3 | period == 4) and x > 0.0)")
-
-print(game2_oreb)
+orebs_team1 = tos.query("((period == 1 | period == 2) and x < 0.00) | ((period == 3 | period == 4) and x > 0.0)")
 
 ## bounds of the court
 court_x = 47
@@ -54,5 +52,5 @@ def plot_init(x, y):
     cbar.set_label(label = 'Density', size = 8)
 
 
-# plot_init(get_game_xy(orebs_team1, 'x'), get_game_xy(orebs_team1, 'y')) # plot the points
-# plt.show() # display the scatter plot
+plot_init(get_game_xy(orebs_team1, 'x'), get_game_xy(orebs_team1, 'y')) # plot the points
+plt.show() # display the scatter plot

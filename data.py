@@ -1,6 +1,7 @@
 import pandas as pd
 from pandas import DataFrame
 import teams
+import numpy as np
 
 def load_game(game_id: str) -> DataFrame:
     df_e = pd.read_json(f"./games/{game_id}/{game_id}_events.jsonl", lines=True)
@@ -31,9 +32,8 @@ def game_evs(df: DataFrame, event: str, oord: str='none') -> DataFrame:
     
     new_coords = pd.DataFrame(new_df.pop('ball').tolist(), index=new_df.index, columns = ['x','y','z'])
     combined = pd.concat([new_df, new_coords.reindex(new_df.index)], axis=1).dropna()
-    
-    combined['gameId'] = combined['gameId'].astype(str)
-    teams.all_games['game'] = teams.all_games['game'].astype(str)
-    combined['gameId'] = combined['gameId'].map(teams.all_games.set_index('game')['homeTeam'])
 
-    return combined
+    combined['homeTeam'] = combined['gameId'].map(teams.all_games.set_index('game')['homeTeam'])
+    combined['awayTeam'] = combined['gameId'].map(teams.all_games.set_index('game')['awayTeam'])
+
+    return combined.drop(columns=['gameId'])

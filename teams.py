@@ -13,7 +13,7 @@ game_meta = pd.read_json(json.dumps(games['games']))
 
 
 game_meta['nbaId'] = game_meta['nbaId'].astype(int)
-all_games = game_meta[(game_meta['nbaId'] >= 42100303) & (game_meta['nbaId'] <= 42100406)]
+all_games = game_meta[(game_meta['nbaId'] >= 42100301) & (game_meta['nbaId'] <= 42100406)]
 all_games['homeTeamId'] = all_games['homeTeamId'].map(team_meta.set_index('id')['name'])
 all_games['awayTeamId'] = all_games['awayTeamId'].map(team_meta.set_index('id')['name'])
 all_games = all_games.filter(items=['id', 'homeTeamId', 'awayTeamId', 'nbaId'])
