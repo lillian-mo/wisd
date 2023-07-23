@@ -27,7 +27,7 @@ def load_game(game_id: str) -> DataFrame:
 
     e_and_t = df_e.merge(df_t, how='inner', on=['gameClock', 'period']).filter\
                     (items=['gameId', 'eventType','shotClock_x','gameClock','period','ball', 'pbpId'])
-    final_df = e_and_t.merge(play_df, left_on='pbpId', right_on='EVENTNUM')
+    final_df = e_and_t.merge(play_df, left_on='pbpId', right_on='EVENTNUM').rename(columns={'PLAYER1_TEAM_NICKNAME': 'team'})
        
     return final_df
 
@@ -39,15 +39,16 @@ def mult_games(games: list) -> DataFrame:
 
     return df
 
-def game_evs(df: DataFrame, event: str, team: str, oord: str='none') -> DataFrame:
+def game_evs(df: DataFrame, event: str, team: str='none', oord: str='none') -> DataFrame:
 
+    new_df = df.query(f"eventType == '{event}'")
     if oord == 'o':
-        new_df = df.query(f"eventType == '{event}' and shotClock_x != 24.0 and PLAYER1_TEAM_NICKNAME == '{team}'")
-    elif oord == 'd':
-        new_df = df.query(f"eventType == '{event}' and shotClock_x == 24.0 and PLAYER1_TEAM_NICKNAME == '{team}'")
-    else:
-        new_df = df.query(f"eventType == '{event}' and PLAYER1_TEAM_NICKNAME == '{team}'")
-    
+        new_df = new_df.query(f"shotClock_x != 24.0")
+    if oord == 'd':
+        new_df = new_df.query(f"shotClock_x == 24.0")  
+    if team != 'none':
+        new_df = new_df.query(f"team == '{team}'") 
+           
     new_coords = pd.DataFrame(new_df.pop('ball').tolist(), index=new_df.index, columns = ['x','y','z'])
     combined = pd.concat([new_df, new_coords.reindex(new_df.index)], axis=1).dropna()
 
