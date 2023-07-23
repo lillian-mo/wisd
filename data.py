@@ -56,7 +56,3 @@ def game_evs(df: DataFrame, event: str, team: str, oord: str='none') -> DataFram
 game_ids = ['0042100301', '0042100302', '0042100303', '0042100304', '0042100305', '0042100306', '0042100307',\
             '0042100311', '0042100312', '0042100313', '0042100314', '0042100315', '0042100401', '0042100402',\
             '0042100403', '0042100404', '0042100405', '0042100406']
-
-all_games = mult_games(game_ids)
-heat_off_rebs = game_evs(all_games, 'REB', 'Heat', 'o')
-print(heat_off_rebs)
