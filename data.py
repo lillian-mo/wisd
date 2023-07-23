@@ -22,8 +22,8 @@ def load_game(game_id: str) -> DataFrame:
     plays = playbyplay.PlayByPlay(headers=HEADERS,
                               endpoint='playbyplayv2',
                               game_id=game_id)
-    play_df = pd.DataFrame(plays.data['PlayByPlay']).filter\
-        (items=['EVENTNUM', 'PERIOD', 'GAME_ID', 'PLAYER1_TEAM_NICKNAME'])
+    play_df = pd.DataFrame(plays.data['PlayByPlay'])
+    play_df = play_df.filter(items=['EVENTNUM', 'EVENTMSGTYPE', 'GAME_ID', 'PLAYER1_TEAM_NICKNAME'])
 
     e_and_t = df_e.merge(df_t, how='inner', on=['gameClock', 'period']).filter\
                     (items=['gameId', 'eventType','shotClock_x','gameClock','period','ball', 'pbpId'])
@@ -39,9 +39,9 @@ def mult_games(games: list) -> DataFrame:
 
     return df
 
-def game_evs(df: DataFrame, event: str, team: str='none', oord: str='none') -> DataFrame:
+def game_evs(df: DataFrame, event: int, team: str='none', oord: str='none') -> DataFrame:
 
-    new_df = df.query(f"eventType == '{event}'")
+    new_df = df.query(f"EVENTMSGTYPE == {event}")
     if oord == 'o':
         new_df = new_df.query(f"shotClock_x != 24.0")
     if oord == 'd':
