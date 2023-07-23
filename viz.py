@@ -1,4 +1,5 @@
 import data
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import gaussian_kde
@@ -12,9 +13,6 @@ game2_oreb = data.game_evs(game2, 'REB', 'o')
 game2_dreb = data.game_evs(game2, 'REB', 'd')
 orebs_team1 = tos.query("((period == 1 | period == 2) and x < 0.00) | ((period == 3 | period == 4) and x > 0.0)")
 
-# print(orebs_team1)
-
-
 ## bounds of the court
 court_x = 47
 court_y = 25
@@ -23,6 +21,21 @@ court_y = 25
 ## get coords within bounds 
 def get_game_xy(game, axis):
     return game.query('x <= 47 and x >= -47').filter([axis])[axis].values.tolist() 
+
+
+net_l = [-42.1, 0.2]
+net_r = [41.9, 0.2]
+
+orebs_team1_l = orebs_team1.query('x < 0').filter(['x', 'y']).values.tolist()
+orebs_team1_r = orebs_team1.query('x > 0').filter(['x', 'y']).values.tolist()
+
+def get_dist(lorb):
+    lodist = []
+    for point in lorb:
+        lodist.append(math.hypot(point[0] - net_l[0]))
+
+
+
 
 
 ## calculate kernal density
