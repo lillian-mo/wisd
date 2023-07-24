@@ -1,6 +1,8 @@
 import pandas as pd
 from pandas import DataFrame
 from py_ball import playbyplay
+from typing import Union
+import numpy as np
 
 HEADERS = {'Connection': 'keep-alive',
            'Host': 'stats.nba.com',
@@ -39,9 +41,16 @@ def mult_games(games: list) -> DataFrame:
 
     return df
 
-def game_evs(df: DataFrame, event: int, team: str='none', oord: str='none') -> DataFrame:
+def game_evs(df: DataFrame, events: Union[list, int], team: str='none', oord: str='none') -> DataFrame:
 
-    new_df = df.query(f"EVENTMSGTYPE == {event}")
+    if type(events) == list:
+        string = f"EVENTMSGTYPE == {events[0]}"
+        for i in events:
+            string = f"{string} or EVENTMSGTYPE == {i}"
+        new_df = df.query(string)
+    else:
+        new_df = df.query(f"EVENTMSGTYPE == {events}")
+
     if oord == 'o':
         new_df = new_df.query(f"shotClock_x != 24.0")
     if oord == 'd':
@@ -54,6 +63,13 @@ def game_evs(df: DataFrame, event: int, team: str='none', oord: str='none') -> D
 
     return combined.drop(columns=['gameId'])
 
+def high_danger(df: DataFrame, rebs: DataFrame, shots: DataFrame) -> DataFrame:
+    ranges = []
+    for i in rebs['gameClock']:
+        ranges.append(np.arange(i, i - 10.0))
+    return ranges
+
 game_ids = ['0042100301', '0042100302', '0042100303', '0042100304', '0042100305', '0042100306', '0042100307',\
             '0042100311', '0042100312', '0042100313', '0042100314', '0042100315', '0042100401', '0042100402',\
             '0042100403', '0042100404', '0042100405', '0042100406']
+
