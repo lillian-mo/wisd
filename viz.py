@@ -2,12 +2,17 @@ import data
 import math
 import matplotlib.pyplot as plt
 
+# game ids
+game_ids = ['0042100301', '0042100302', '0042100303', '0042100304', '0042100305', '0042100306', '0042100307',\
+            '0042100311', '0042100312', '0042100313', '0042100314', '0042100315', '0042100401', '0042100402',\
+            '0042100403', '0042100404', '0042100405', '0042100406']
+
 ## Heat Offensive Rebounds (Game 1)
-game1 = data.load_game(data.game_ids[0])
+game1 = data.load_game(game_ids[0])
 game1_oreb = data.game_evs(game1, 4, 'Heat', 'o')
 
 ## Heat Offensive Rebounds (All games)
-# mult_games = data.mult_games(data.game_ids)
+# mult_games = data.mult_games(game_ids)
 # mult_games_oreb = data.game_evs(mult_games, 4, 'Heat', 'o')
 
 ## bounds of the court & net location

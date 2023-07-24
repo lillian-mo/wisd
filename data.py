@@ -17,6 +17,19 @@ HEADERS = {'Connection': 'keep-alive',
                          ' AppleWebKit/537.36 (KHTML, like Gecko)' + \
                          ' Chrome/81.0.4044.129 Safari/537.36'}
 
+event_dict = {
+    1: 'SHOT',
+    2: 'SHOT',
+    3: 'FT',
+    4: 'REB',
+    5: 'TO',
+    6: 'FOUL',
+    7: 'VIO',
+    8: 'SUB',
+    9: 'TMO',
+    10: 'JB'
+}
+
 
 def load_game(game_id: str) -> DataFrame:
     df_e = pd.read_json(f"./games/{game_id}/{game_id}_events.jsonl", lines=True)
@@ -26,10 +39,12 @@ def load_game(game_id: str) -> DataFrame:
                               game_id=game_id)
     play_df = pd.DataFrame(plays.data['PlayByPlay'])
     play_df = play_df.filter(items=['EVENTNUM', 'EVENTMSGTYPE', 'GAME_ID', 'PLAYER1_TEAM_NICKNAME'])
+    play_df['event'] = play_df['EVENTMSGTYPE'].map(event_dict)
 
     e_and_t = df_e.merge(df_t, how='inner', on=['gameClock', 'period']).filter\
                     (items=['gameId', 'eventType','shotClock_x','gameClock','period','ball', 'pbpId'])
-    final_df = e_and_t.merge(play_df, left_on='pbpId', right_on='EVENTNUM', how='left').rename(columns={'PLAYER1_TEAM_NICKNAME': 'team'})
+    final_df = e_and_t.merge(play_df, left_on=['eventType','pbpId'], right_on=['event','EVENTNUM'], how='inner').\
+                    rename(columns={'PLAYER1_TEAM_NICKNAME': 'team'}).drop(columns=['event', 'pbpId'])
        
     return final_df
 
@@ -88,7 +103,3 @@ def high_danger(df: DataFrame, rebs: DataFrame, shots: DataFrame) -> DataFrame:
     shot_copy = shot_copy.drop(columns=['inRange'])
 
     return shot_copy
-
-game_ids = ['0042100301', '0042100302', '0042100303', '0042100304', '0042100305', '0042100306', '0042100307',\
-            '0042100311', '0042100312', '0042100313', '0042100314', '0042100315', '0042100401', '0042100402',\
-            '0042100403', '0042100404', '0042100405', '0042100406']
