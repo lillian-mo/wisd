@@ -44,7 +44,7 @@ def label_points(game):
         plt.text(game_x[i], game_y[i], game_y[i], size = 5)
         
 
-def plot_init(game):
+def plot_init(game, team):
     game1_oreb_l = game.query('x < 0').filter(['x', 'y']).values.tolist()
     game1_oreb_r = game.query('x > 0').filter(['x', 'y']).values.tolist()
 
@@ -59,7 +59,7 @@ def plot_init(game):
     ## label axes & title
     plt.xlabel('x', weight='bold')
     plt.ylabel('y', weight='bold', rotation=0)
-    plt.title('Offensive Rebounds (Heat)', weight='bold')
+    plt.title('Offensive Rebounds ({})'.format(team), weight='bold')
 
     ## create colour map
     c1 = get_dist(game1_oreb_l)
@@ -75,5 +75,5 @@ def plot_init(game):
     cbar.set_label(label = 'Distance', size = 8)
 
 
-plot_init(game1_oreb) # plot the points
+plot_init(game1_oreb, 'Heat') # plot the points
 plt.show() # display the scatter plot
