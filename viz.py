@@ -1,53 +1,53 @@
 import data
 import math
 import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import gaussian_kde
 
-game2 = data.load_game("0042100302")
-twoand3 = data.mult_games(['0042100302', '0042100303'])
+## Heat Offensive Rebounds (Game 1)
+game1 = data.load_game(data.game_ids[0])
+game1_oreb = data.game_evs(game1, 4, 'Heat', 'o')
 
-evs = game2.eventType.unique().tolist()
-tos = data.game_evs(twoand3, 'REB', 'o')
-game2_oreb = data.game_evs(game2, 'REB', 'o')
-game2_dreb = data.game_evs(game2, 'REB', 'd')
-orebs_team1 = tos.query("((period == 1 | period == 2) and x < 0.00) | ((period == 3 | period == 4) and x > 0.0)")
+## Heat Offensive Rebounds (All games)
+# mult_games = data.mult_games(data.game_ids)
+# mult_games_oreb = data.game_evs(mult_games, 4, 'Heat', 'o')
 
-## bounds of the court
+## bounds of the court & net location
 court_x = 47
 court_y = 25
-
-
-## get coords within bounds 
-def get_game_xy(game, axis):
-    return game.query('x <= 47 and x >= -47').filter([axis])[axis].values.tolist() 
-
-
 net_l = [-42.1, 0.2]
 net_r = [41.9, 0.2]
 
-orebs_team1_l = orebs_team1.query('x < 0').filter(['x', 'y']).values.tolist()
-orebs_team1_r = orebs_team1.query('x > 0').filter(['x', 'y']).values.tolist()
 
 def get_dist(lorb):
-    lodist = []
-    for point in lorb:
-        lodist.append(math.hypot(point[0] - net_l[0]))
+    lod = []
+    if lorb[0][0] < 0: ## left half of court
+        for point in lorb: lod.append(math.hypot(point[0] - net_l[0], point[1] - net_l[1]))
+    else:
+        for point in lorb: lod.append(math.hypot(point[0] - net_r[0], point[1] - net_r[1]))
+    return lod
 
 
+def get_coords(game, axis):
+    lop = []
+    if axis == 'x':
+        for point in game: lop.append(point[0])
+    else:
+        for point in game: lop.append(point[1])
+    return lop
 
 
+def label_points(game):
+    game_x = get_coords(game, 'x')
+    game_y = get_coords(game, 'y')
 
-## calculate kernal density
-def game_kde(game_x, game_y):
-    ## convert points into a numpy array
-    x = np.array(game_x)
-    y = np.array(game_y)
-    xy = np.vstack([x, y]) # arrange arrays vertically to form a single array
-    return gaussian_kde(xy)(xy) # return point density
+    ## display distance of points to the net
+    for i in range(len(game_x)):
+        plt.text(game_x[i], game_y[i], game_y[i], size = 5)
+        
 
+def plot_init(game):
+    game1_oreb_l = game.query('x < 0').filter(['x', 'y']).values.tolist()
+    game1_oreb_r = game.query('x > 0').filter(['x', 'y']).values.tolist()
 
-def plot_init(x, y):
     ## load court image as background
     img = plt.imread("..\wisd\court.jpg")
     plt.imshow(img, extent=[-court_x, court_x, -court_y, court_y]) ## show image
@@ -59,14 +59,21 @@ def plot_init(x, y):
     ## label axes & title
     plt.xlabel('x', weight='bold')
     plt.ylabel('y', weight='bold', rotation=0)
-    plt.title('Density Map (NBA)', weight='bold')
+    plt.title('Offensive Rebounds (Heat)', weight='bold')
 
-    ## plot points & colourmap
-    c = game_kde(x, y)
-    plt.scatter(x, y, c = c, cmap = 'hot_r', alpha = 0.75)
+    ## create colour map
+    c1 = get_dist(game1_oreb_l)
+    c2 = get_dist(game1_oreb_r)
+
+    ## plot points & colour bar
+    plt.scatter(get_coords(game1_oreb_l, 'x'), get_coords(game1_oreb_l, 'y'), \
+                c = c1, cmap = 'autumn', alpha = 0.75)
+    plt.scatter(get_coords(game1_oreb_r, 'x'), get_coords(game1_oreb_r, 'y'), \
+                c = c2, cmap = 'autumn', alpha = 0.75)
+    plt.clim(0, max(c1 + c2))
     cbar = plt.colorbar(orientation = 'vertical', shrink = 0.5)
-    cbar.set_label(label = 'Density', size = 8)
+    cbar.set_label(label = 'Distance', size = 8)
 
 
-plot_init(get_game_xy(orebs_team1, 'x'), get_game_xy(orebs_team1, 'y')) # plot the points
+plot_init(game1_oreb) # plot the points
 plt.show() # display the scatter plot
