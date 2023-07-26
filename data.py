@@ -1,3 +1,6 @@
+# This file contains all the functions that filter through the dataframes 
+# for rebounds and correspoding high danger chances
+
 import pandas as pd
 from pandas import DataFrame
 from py_ball import playbyplay
@@ -35,8 +38,7 @@ danger_type = {
     0: 3,
     1: 5,
     2: 4
-}
-
+} 
 
 def load_game(game_id: str) -> DataFrame:
     """a function that creates a merged dataframe of relevant data from events, tracking, and pbp for a given game
@@ -47,6 +49,7 @@ def load_game(game_id: str) -> DataFrame:
     Returns:
         DataFrame: a dataframe merging the events, tracking, and pbp from the corresponding game
     """
+    # this reads the events, tracking, and play dataframes separately
     df_e = pd.read_json(f"./games/{game_id}/{game_id}_events.jsonl", lines=True)
     df_t = pd.read_json(f"./games/{game_id}/{game_id}_tracking.jsonl", lines=True).drop_duplicates(subset=['gameClock','period'])
     plays = playbyplay.PlayByPlay(headers=HEADERS,
@@ -56,8 +59,11 @@ def load_game(game_id: str) -> DataFrame:
     play_df = play_df.filter(items=['EVENTNUM', 'EVENTMSGTYPE', 'GAME_ID', 'PLAYER1_TEAM_NICKNAME'])
     play_df['event'] = play_df['EVENTMSGTYPE'].map(event_dict)
 
+    # merges events and tracking based on gameClock and period
     e_and_t = df_e.merge(df_t, how='inner', on=['gameClock', 'period']).filter\
                     (items=['gameId', 'eventType','shotClock_x','gameClock','period','ball', 'pbpId'])
+
+    # merges events and tracking with the pbp data
     final_df = e_and_t.merge(play_df, left_on=['eventType','pbpId'], right_on=['event','EVENTNUM'], how='inner').\
                     rename(columns={'PLAYER1_TEAM_NICKNAME': 'team'}).drop(columns=['event', 'pbpId'])
        
@@ -92,25 +98,31 @@ def game_evs(df: DataFrame, events: Union[list, int], team: str='none', oord: st
         DataFrame: a dataframe with the games filtered on event
     """
 
+    new_df = df
+    new_df['rebmatch'] = new_df.team.eq(new_df.team.shift())
+
+    # queries by offensive or defensive, if given
+    if oord == 'o':
+        new_df = new_df.query(f"rebmatch == True")
+    if oord == 'd':
+        new_df = new_df.query(f"rebmatch == False")
+
+    # queries by event
     if type(events) == list:
         string = f"EVENTMSGTYPE == {events[0]}"
         for i in events:
             string = f"{string} or EVENTMSGTYPE == {i}"
-        new_df = df.query(string)
+        new_df = new_df.query(string)
     else:
-        new_df = df.query(f"EVENTMSGTYPE == {events}")
+        new_df = new_df.query(f"EVENTMSGTYPE == {events}")
 
-    
-    if oord == 'o':
-        new_df = new_df.query(f"shotClock_x != 24.0")
-    if oord == 'd':
-        new_df = new_df.query(f"shotClock_x == 24.0")  
+    # queries by team, if given
     if team != 'none':
         new_df = new_df.query(f"team == '{team}'") 
-    
 
+    # separates the ball
     new_coords = pd.DataFrame(new_df.pop('ball').tolist(), index=new_df.index, columns = ['x','y','z'])
-    combined = pd.concat([new_df, new_coords.reindex(new_df.index)], axis=1).dropna().drop(columns='z')
+    combined = pd.concat([new_df, new_coords.reindex(new_df.index)], axis=1).dropna().drop(columns=['rebmatch', 'z'])
 
     return combined.drop(columns=['gameId'])
 
@@ -147,6 +159,8 @@ def high_danger(rebs: DataFrame, shots: DataFrame) -> DataFrame:
         DataFrame: the dataframe of rebounds in addition to columns with the shot that came in transition if there was one, 
                    along with danger level
     """
+
+    # creates the list of 10-sec ranges post defensive rebound
     reb_ranges = []
     n = rebs.gameClock.values.tolist()
     p = rebs.period.values.tolist()
@@ -156,16 +170,19 @@ def high_danger(rebs: DataFrame, shots: DataFrame) -> DataFrame:
         num = n[i]
         reb_ranges.append([int(num * 100) - 1000, int(num * 100), p[i], int(g[i]), t[i]])
     
+    # checks if the shots are in range
     shots['inRange'] = shots.apply(lambda x: in_ranges(x.gameClock, x.period, int(x.GAME_ID), x.team, reb_ranges), axis=1)
     range_pop = pd.DataFrame(shots.pop('inRange').tolist(), index=shots.index, columns=['bool', 'time'])
     shots_new = pd.concat([shots, range_pop.reindex(shots.index)], axis=1).\
                 drop(columns=['EVENTNUM', 'shotClock_x', 'eventType']).\
                 rename(columns={'EVENTMSGTYPE': 'shotType', 'x': 'shot_x', 'y': 'shot_y'})
     
-    rebs['int_time'] = (rebs['gameClock'] * 100).astype(int)
+    rebs.loc[:, 'int_time'] = (rebs['gameClock'] * 100).astype(int)
 
-    together = pd.merge(rebs, shots_new, left_on=['int_time', 'period', 'GAME_ID'], right_on=['time', 'period', 'GAME_ID'], how='left')
+    # combines the rebounds with their respective shots, if a shot exists
+    together = pd.merge(rebs, shots_new, left_on=['int_time', 'period', 'GAME_ID', 'team'], right_on=['time', 'period', 'GAME_ID', 'team'], how='left')
     together['shotType'] = together['shotType'].fillna(0).astype(int)
     together['danger'] = together['shotType'].map(danger_type)
-    together = together.drop(columns=['shotClock_x', 'EVENTNUM', 'EVENTMSGTYPE', 'int_time', 'team_y', 'shotType', 'bool', 'time'])
+    together = together.drop(columns=['shotClock_x', 'EVENTMSGTYPE', 'int_time', 'shotType', 'bool', 'time'])
+
     return together.drop_duplicates(subset='gameClock_x', keep='first')
