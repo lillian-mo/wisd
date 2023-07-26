@@ -37,6 +37,14 @@ danger_type = {
 
 
 def load_game(game_id: str) -> DataFrame:
+    """_summary_
+
+    Args:
+        game_id (str): the id of the game being called
+
+    Returns:
+        DataFrame: a dataframe merging the events, tracking, and pbp from the corresponding game
+    """
     df_e = pd.read_json(f"./games/{game_id}/{game_id}_events.jsonl", lines=True)
     df_t = pd.read_json(f"./games/{game_id}/{game_id}_tracking.jsonl", lines=True).drop_duplicates(subset=['gameClock','period'])
     plays = playbyplay.PlayByPlay(headers=HEADERS,
@@ -116,7 +124,7 @@ def high_danger(rebs: DataFrame, shots: DataFrame) -> DataFrame:
     together['shotType'] = together['shotType'].fillna(0).astype(int)
     together['danger'] = together['shotType'].map(danger_type)
     together = together.drop(columns=['shotClock_x', 'EVENTNUM', 'EVENTMSGTYPE', 'int_time', 'team_y', 'shotType', 'time'])
-    return together
+    return together.drop_duplicates(subset='gameClock_x', keep='first')
 
 
 
@@ -126,7 +134,7 @@ game_ids = ['0042100301', '0042100302', '0042100303', '0042100304', '0042100305'
             '0042100311', '0042100312', '0042100313', '0042100314', '0042100315', '0042100401', '0042100402',\
             '0042100403', '0042100404', '0042100405', '0042100406']
 
-some_games = mult_games(game_ids[1:3])
+some_games = load_game(game_ids[4])
 rebounds = game_evs(some_games, 4, 'Heat', 'd')
 shots = game_evs(some_games, [1, 2], 'Heat')
 danger_shots = high_danger(rebounds, shots)
