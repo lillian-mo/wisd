@@ -16,6 +16,7 @@ HEADERS = {'Connection': 'keep-alive',
                          ' AppleWebKit/537.36 (KHTML, like Gecko)' + \
                          ' Chrome/81.0.4044.129 Safari/537.36'}
 
+# EVENTMSGTYPE code from pbp data with corresponding eventType data
 event_dict = {
     1: 'SHOT',
     2: 'SHOT',
@@ -29,6 +30,7 @@ event_dict = {
     10: 'JB'
 }
 
+# the EVENTMSGCODE for the event, along with the danger level it corresponds to
 danger_type = {
     0: 3,
     1: 5,
@@ -37,7 +39,7 @@ danger_type = {
 
 
 def load_game(game_id: str) -> DataFrame:
-    """_summary_
+    """a function that creates a merged dataframe of relevant data from events, tracking, and pbp for a given game
 
     Args:
         game_id (str): the id of the game being called
@@ -63,6 +65,14 @@ def load_game(game_id: str) -> DataFrame:
 
 
 def mult_games(games: list) -> DataFrame:
+    """loads multiple games
+
+    Args:
+        games (list): the list of game ids
+
+    Returns:
+        DataFrame: the dataframe (following the format from load_game) with data from the games in the list
+    """
     df = load_game(games[0])
     for i in games[1:]:
         df = pd.concat(objs=[df, load_game(i)], ignore_index=True)
@@ -70,6 +80,17 @@ def mult_games(games: list) -> DataFrame:
     return df
 
 def game_evs(df: DataFrame, events: Union[list, int], team: str='none', oord: str='none') -> DataFrame:
+    """filters the dataframe based on the event(s)
+
+    Args:
+        df (DataFrame): the game(s) data
+        events (Union[list, int]): either a list of the event codes or an event code
+        team (str, optional): the team that performed the event. Defaults to 'none'.
+        oord (str, optional): if the event is a rebound, whether it's offensive('o') or defensive('d'). Defaults to 'none'.
+
+    Returns:
+        DataFrame: a dataframe with the games filtered on event
+    """
 
     if type(events) == list:
         string = f"EVENTMSGTYPE == {events[0]}"
@@ -93,7 +114,20 @@ def game_evs(df: DataFrame, events: Union[list, int], team: str='none', oord: st
 
     return combined.drop(columns=['gameId'])
 
-def in_ranges(time: float, period: int, game: int, team: str, ranges: list, kept: list=[]) -> Union[bool, list]:
+def in_ranges(time: float, period: int, game: int, team: str, ranges: list) -> Union[bool, list]:
+    """determines whether or not a given shot was taken in a 10 second part of the game
+
+    Args:
+        time (float): the time on the game clock when the shot happened
+        period (int): the period that it happened in
+        game (int): the game it was in
+        team (str): the team that made the shot
+        ranges (list): a list of potential 10 second parts
+
+    Returns:
+        Union[bool, list]: the first element of the list says if the shot happened while the second returns the 
+                           rebound time it was attached to if it happened, and False if it didn't
+    """
     time_int = int(time * 100)
     for i in ranges:
         if time_int >= i[0] and time_int <= i[1] and period == i[2] and game == i[3] and team == i[4]:
@@ -103,6 +137,16 @@ def in_ranges(time: float, period: int, game: int, team: str, ranges: list, kept
 
 
 def high_danger(rebs: DataFrame, shots: DataFrame) -> DataFrame:
+    """_summary_
+
+    Args:
+        rebs (DataFrame): the dataframe of rebounds
+        shots (DataFrame): the dataframe of shots
+
+    Returns:
+        DataFrame: the dataframe of rebounds in addition to columns with the shot that came in transition if there was one, 
+                   along with danger level
+    """
     reb_ranges = []
     n = rebs.gameClock.values.tolist()
     p = rebs.period.values.tolist()
@@ -123,20 +167,5 @@ def high_danger(rebs: DataFrame, shots: DataFrame) -> DataFrame:
     together = pd.merge(rebs, shots_new, left_on=['int_time', 'period', 'GAME_ID'], right_on=['time', 'period', 'GAME_ID'], how='left')
     together['shotType'] = together['shotType'].fillna(0).astype(int)
     together['danger'] = together['shotType'].map(danger_type)
-    together = together.drop(columns=['shotClock_x', 'EVENTNUM', 'EVENTMSGTYPE', 'int_time', 'team_y', 'shotType', 'time'])
+    together = together.drop(columns=['shotClock_x', 'EVENTNUM', 'EVENTMSGTYPE', 'int_time', 'team_y', 'shotType', 'bool', 'time'])
     return together.drop_duplicates(subset='gameClock_x', keep='first')
-
-
-
-# leaving this here so you know how to call the functions this is just my testing
-"""
-game_ids = ['0042100301', '0042100302', '0042100303', '0042100304', '0042100305', '0042100306', '0042100307',\
-            '0042100311', '0042100312', '0042100313', '0042100314', '0042100315', '0042100401', '0042100402',\
-            '0042100403', '0042100404', '0042100405', '0042100406']
-
-some_games = load_game(game_ids[4])
-rebounds = game_evs(some_games, 4, 'Heat', 'd')
-shots = game_evs(some_games, [1, 2], 'Heat')
-danger_shots = high_danger(rebounds, shots)
-print(danger_shots)
-"""
