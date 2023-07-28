@@ -1,11 +1,13 @@
 # This file contains all the functions that filter through the dataframes 
 # for rebounds and correspoding high danger chances
 
+# importing libraries
 import pandas as pd
 from pandas import DataFrame
 from py_ball import playbyplay
-from typing import Union
+from typing import Union, Tuple
 
+# HTTP headers
 HEADERS = {'Connection': 'keep-alive',
            'Host': 'stats.nba.com',
            'Origin': 'http://stats.nba.com',
@@ -126,7 +128,7 @@ def game_evs(df: DataFrame, events: Union[list, int], team: str='none', oord: st
 
     return combined.drop(columns=['gameId'])
 
-def in_ranges(time: float, period: int, game: int, team: str, ranges: list) -> Union[bool, list]:
+def in_ranges(time: float, period: int, game: int, team: str, ranges: list) -> list:
     """determines whether or not a given shot was taken in a 10 second part of the game
 
     Args:
@@ -137,8 +139,8 @@ def in_ranges(time: float, period: int, game: int, team: str, ranges: list) -> U
         ranges (list): a list of potential 10 second parts
 
     Returns:
-        Union[bool, list]: the first element of the list says if the shot happened while the second returns the 
-                           rebound time it was attached to if it happened, and False if it didn't
+        list: the first element of the list says if the shot happened while the second returns the 
+              rebound time it was attached to if it happened, and False if it didn't
     """
     time_int = int(time * 100)
     for i in ranges:
@@ -185,17 +187,34 @@ def high_danger(rebs: DataFrame, shots: DataFrame) -> DataFrame:
     together['danger'] = together['shotType'].map(danger_type)
     together = together.drop(columns=['shotClock_x', 'EVENTMSGTYPE', 'int_time', 'shotType', 'bool', 'time'])
 
+    # dropping immediate duplicates will remove followup shots which are not counted in this analysis
     return together.drop_duplicates(subset=['gameClock_x', 'period', 'GAME_ID'], keep='first')
 
-def get_dangers(games: list, team: str):
+def get_dangers(games: list, team: str) -> Tuple[DataFrame, DataFrame, DataFrame]:
+    """returns the danger dataframes of a team given certain games
+
+    Args:
+        games (list): the list of game ids
+        team (str): the team
+
+    Returns:
+        Tuple[DataFrame, DataFrame, DataFrame]: the overall danger dataframe, 
+                                                the dataframe coming from the left, 
+                                                and the dataframe coming from the right
+    """
+    
+    # loads the games
     game_df = mult_games(games)
 
+    # different rebound dataframes
     rebound_df = game_evs(game_df, 4, team, 'd').query('x >= -47 and x <= 47')
     rebound_l = rebound_df.query('x <= 0')
     rebound_r = rebound_df.query('x > 0')
 
+    # the shot dataframe
     shot_df = game_evs(game_df, [1, 2], team)
 
+    # the danger dataframes given each rebound dataframe with the shot dataframe
     danger = high_danger(rebound_df, shot_df)
     danger_l = high_danger(rebound_l, shot_df)
     danger_r = high_danger(rebound_r, shot_df)
