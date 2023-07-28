@@ -186,3 +186,18 @@ def high_danger(rebs: DataFrame, shots: DataFrame) -> DataFrame:
     together = together.drop(columns=['shotClock_x', 'EVENTMSGTYPE', 'int_time', 'shotType', 'bool', 'time'])
 
     return together.drop_duplicates(subset='gameClock_x', keep='first')
+
+def get_dangers(games: list, team: str):
+    game_df = mult_games(games)
+
+    rebound_df = game_evs(game_df, 4, team, 'd').query('x >= -47 and x <= 47')
+    rebound_l = rebound_df.query('x <= 0')
+    rebound_r = rebound_df.query('x > 0')
+
+    shot_df = game_evs(game_df, [1, 2], team)
+
+    danger = high_danger(rebound_df, shot_df)
+    danger_l = high_danger(rebound_l, shot_df)
+    danger_r = high_danger(rebound_r, shot_df)
+
+    return danger, danger_l, danger_r
