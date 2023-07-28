@@ -9,27 +9,9 @@ game_ids = ['0042100301', '0042100302', '0042100303', '0042100304', '0042100305'
             '0042100403', '0042100404', '0042100405', '0042100406']
 
 ## Team Defensive Rebounds (All games)
-all_games = data.mult_games(game_ids[4:6]) # load in games
-games_dreb = data.game_evs(all_games, 4, 'Heat', 'd').query('x >= -47 and x <= 47') # get defensive rebounds
-games_dreb_l = games_dreb.query('x <= 0') # defensive rebounds (left half of court)
-games_dreb_r = games_dreb.query('x > 0') # defensive rebounds (right half of court)
-
-all_shots = data.game_evs(all_games, [1, 2], 'Heat') # get all shots
-
-## danger values
-danger_lvl = data.high_danger(games_dreb, all_shots).filter(['danger'])['danger'].values.tolist() # whole court
-danger_lvl_l = data.high_danger(games_dreb_l, all_shots).dropna().filter(['danger'])['danger'].values.tolist() # left half of court
-danger_lvl_r = data.high_danger(games_dreb_r, all_shots).dropna().filter(['danger'])['danger'].values.tolist() # right half of court
-
-## shot locations
-shots_xy = data.high_danger(games_dreb, all_shots).dropna().filter(['shots_x', 'shot_y']).values.tolist() # whole court
-shots_xy_l = data.high_danger(games_dreb_l, all_shots).dropna().filter(['shot_x', 'shot_y']).values.tolist() # left half of court
-shots_xy_r = data.high_danger(games_dreb_r, all_shots).dropna().filter(['shot_x', 'shot_y']).values.tolist() # right half of court
-
-## rebound locations converted to shots
-shots_dreb_xy = data.high_danger(games_dreb, all_shots).dropna().filter(['x', 'y']).values.tolist() # whole court
-shots_dreb_xy_l = data.high_danger(games_dreb_l, all_shots).dropna().filter(['x', 'y']).values.tolist() # left half of court
-shots_dreb_xy_r = data.high_danger(games_dreb_r, all_shots).dropna().filter(['x', 'y']).values.tolist() # right half of court 
+danger_df, danger_df_l, danger_df_r = data.get_dangers(game_ids, 'Mavericks')
+danger_l = danger_df_l.dropna().filter(['danger'])['danger'].values.tolist()
+danger_r = danger_df_r.dropna().filter(['danger'])['danger'].values.tolist()
 
 ## bounds of the court & net location
 court_x = 47
@@ -66,8 +48,9 @@ def get_colours(team):
     return colours
 
 
-def plot_init(game, danger, team):
-    dreb_x, dreb_y = get_coords(game.filter(['x', 'y']).values.tolist()) # x,y coords of def rebs
+def plot_init(games, team):
+    dreb_x, dreb_y = get_coords(games.filter(['x', 'y']).values.tolist()) # x,y coords of def rebs
+    danger = games.filter(['danger'])['danger'].values.tolist()
     
     ## load court image as background
     img = plt.imread("..\wisd\court.jpg")
@@ -95,9 +78,10 @@ def plot_init(game, danger, team):
     cbar.set_label(label = 'Danger Level', size = 8)
 
 
-def plot_conv_init(shots, shots_dreb, danger, team):
-    shot_x, shot_y = get_coords(shots) # x,y coords of shots
-    shot_dreb_x, shot_dreb_y = get_coords(shots_dreb) # x,y coords of rebounds resulting in shots
+def plot_conv_init(games, team):
+    shot_x, shot_y = get_coords(games.dropna().filter(['shot_x', 'shot_y']).values.tolist()) # x,y coords of shots
+    shot_dreb_x, shot_dreb_y = get_coords(games.dropna().filter(['x', 'y']).values.tolist()) # x,y coords of rebounds resulting in shots
+    danger = games.dropna().filter(['danger'])['danger'].values.tolist()
 
     ## load court image as background
     img = plt.imread("..\wisd\court.jpg")
@@ -119,7 +103,7 @@ def plot_conv_init(shots, shots_dreb, danger, team):
     ## plot locations of shots & connection of rebounds to corresponding shots
     shot_plot = plt.scatter(shot_x, shot_y, marker = 'X', s = 45)
 
-    for i in range(len(shots)):
+    for i in range(len(shot_x)):
         plt.plot([shot_x[i], shot_dreb_x[i]], [shot_y[i], shot_dreb_y[i]], \
                 'grey', linestyle = 'dashed', linewidth = 1, alpha = 0.75)
         
@@ -135,8 +119,8 @@ def plot_conv_init(shots, shots_dreb, danger, team):
     cbar.set_label(label = 'Danger Level', size = 8)
 
 
-plot_init(games_dreb, danger_lvl, 'Warriors') # plot defensive rebounds
-# plot_conv_init(shots_xy_l, shots_dreb_xy_l, danger_lvl_l, 'Heat') # plot defensive rebound conversion left half
-# plot_conv_init(shots_xy_r, shots_dreb_xy_r, danger_lvl_r, 'Warriors') # plot defensive rebound conversion right half
+plot_init(danger_df, 'Mavericks') # plot defensive rebounds
+# plot_conv_init(danger_df_l, 'Mavericks') # plot defensive rebound conversion left half
+# plot_conv_init(danger_df_r, 'Mavericks') # plot defensive rebound conversion right half
 
 plt.show() # display the scatter plot
