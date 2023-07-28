@@ -185,7 +185,7 @@ def high_danger(rebs: DataFrame, shots: DataFrame) -> DataFrame:
     together['danger'] = together['shotType'].map(danger_type)
     together = together.drop(columns=['shotClock_x', 'EVENTMSGTYPE', 'int_time', 'shotType', 'bool', 'time'])
 
-    return together.drop_duplicates(subset='gameClock_x', keep='first')
+    return together.drop_duplicates(subset=['gameClock_x', 'period', 'GAME_ID'], keep='first')
 
 def get_dangers(games: list, team: str):
     game_df = mult_games(games)
