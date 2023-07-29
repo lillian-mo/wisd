@@ -13,7 +13,7 @@ danger_df, danger_df_l, danger_df_r = data.get_dangers(game_ids, 'Mavericks')
 danger_l = danger_df_l.dropna().filter(['danger'])['danger'].values.tolist()
 danger_r = danger_df_r.dropna().filter(['danger'])['danger'].values.tolist()
 
-## bounds of the court & net location
+## bounds of court
 court_x = 47
 court_y = 25
 
